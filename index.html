@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Museum Gallery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: linear-gradient(160deg, #1a1612 0%, #0d0b09 55%, #1a1612 100%);
+            color: #fff;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(255,255,255,0.012) 80px, rgba(255,255,255,0.012) 81px),
+                repeating-linear-gradient(0deg,  transparent, transparent 80px, rgba(255,255,255,0.012) 80px, rgba(255,255,255,0.012) 81px);
+            pointer-events: none; z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed; top: -25%; left: 50%;
+            transform: translateX(-50%);
+            width: 130%; height: 55%;
+            background: radial-gradient(ellipse at center, rgba(255,200,150,0.07) 0%, transparent 68%);
+            pointer-events: none; z-index: 0;
+        }
+
+        /* ── ROOT ── */
+        .page {
+            position: relative; z-index: 1;
+            width: 100vw; height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        /* ── HEADER ── */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1vh 3vw 0.7vh;
+            background: linear-gradient(180deg, rgba(13,11,9,0.9) 0%, transparent 100%);
+        }
+
+        .h-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(0.7rem, 1.3vw, 1rem);
+            font-weight: 300; letter-spacing: 7px;
+            text-transform: uppercase; color: rgba(255,255,255,0.5);
+        }
+
+        .h-rule {
+            flex: 1; height: 1px; margin: 0 2vw;
+            background: linear-gradient(90deg, transparent, rgba(212,165,116,0.3), transparent);
+        }
+
+        /* ── THREE-COLUMN BODY ── */
+        .body {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* ── ART PANEL (each side) ── */
+        .art-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;   /* 2 columns */
+            grid-template-rows: repeat(4, 1fr); /* 4 rows */
+            gap: 0.8vh 0.8vw;
+            padding: 1.2vh 1.2vw 1.5vh;
+            overflow: hidden;
+        }
+
+        .art-panel.left  { padding-left: 2vw;  border-right: 1px solid rgba(212,165,116,0.13); }
+        .art-panel.right { padding-right: 2vw; border-left:  1px solid rgba(212,165,116,0.13); }
+
+        /* ── EXHIBIT CELL ── */
+        .exhibit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 0; min-width: 0;
+            position: relative;
+        }
+
+        .spotlight {
+            position: absolute; top: -12%; left: 50%;
+            transform: translateX(-50%);
+            width: 100%; height: 55%;
+            background: radial-gradient(ellipse at top, rgba(255,210,170,0.14) 0%, transparent 68%);
+            pointer-events: none; opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .exhibit:hover .spotlight { opacity: 1; }
+
+        .frame-outer {
+            background: linear-gradient(145deg, #3a2f25 0%, #1a1612 55%, #3a2f25 100%);
+            padding: 4px;
+            cursor: pointer;
+            width: 100%; flex: 1; min-height: 0;
+            display: flex; flex-direction: column;
+            box-shadow: 0 5px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07);
+            transition: transform 0.38s cubic-bezier(0.23,1,0.32,1), box-shadow 0.38s ease;
+        }
+
+        .frame-outer:hover {
+            transform: scale(1.05) translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.13), 0 0 18px rgba(212,165,116,0.09);
+        }
+
+        .frame-inner {
+            background: linear-gradient(145deg, #281e17 0%, #1a1612 100%);
+            padding: 2px; flex: 1; display: flex; flex-direction: column;
+            background-size: cover;
+        }
+
+        .frame-mat {
+            background: #f3ede4;
+            padding: 4px; flex: 1; display: flex;
+            overflow: hidden;
+            aspect-ratio: 21/9;
+        }
+
+        .art-image { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+
+        .plaque {
+            width: 90%; margin-top: 0.35vh;
+            padding: 0.25vh 0.5vw 0.3vh;
+            background: linear-gradient(180deg, #251d16 0%, #131009 100%);
+            text-align: center; position: relative;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+
+        .plaque::before {
+            content: '';
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 44%; height: 1px;
+            background: linear-gradient(90deg, transparent, #d4a574, transparent);
+        }
+
+        .plaque h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(0.4rem, 0.60vw, 0.60rem);
+            font-weight: 300; letter-spacing: 1px;
+            text-transform: uppercase; color: #fff; white-space: nowrap;
+        }
+
+        .plaque p {
+            font-size: clamp(0.42rem, 0.55vw, 0.55rem);
+            color: rgba(255,255,255,0.4); font-style: italic;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* ── CENTER STAGE ── */
+        .center-stage {
+            width: clamp(150px, 16vw, 260px);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 2vh 1.2vw; text-align: center;
+            position: relative; overflow: hidden;
+        }
+
+        .center-stage::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at center, rgba(212,165,116,0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .orn { display: flex; align-items: center; gap: 0.5vw; width: 100%; margin-bottom: 1.8vh; }
+        .orn.bottom { margin-bottom: 0; margin-top: 1.8vh; }
+        .orn-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(212,165,116,0.5)); }
+        .orn-line.r { background: linear-gradient(90deg, rgba(212,165,116,0.5), transparent); }
+        .orn-gem { width: 5px; height: 5px; background: #d4a574; transform: rotate(45deg); flex-shrink: 0; }
+
+        .c-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1rem, 2vw, 2rem);
+            font-weight: 300; letter-spacing: clamp(3px, 0.7vw, 4px);
+            text-transform: uppercase; color: #fff;
+            line-height: 1.2; margin-bottom: 1.2vh;
+        }
+
+        .c-sub {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(0.62rem, 1vw, 0.95rem);
+            font-weight: 300; font-style: italic;
+            letter-spacing: 3px; color: rgba(212,165,116,0.65);
+            margin-bottom: 1.6vh;
+        }
+
+        .c-rule { width: 36px; height: 1px; background: linear-gradient(90deg, transparent, #d4a574, transparent); margin-bottom: 1.6vh; }
+
+        .c-body {
+            font-size: clamp(0.48rem, 0.7vw, 0.68rem);
+            line-height: 1.9; letter-spacing: 2px;
+            text-transform: uppercase; color: rgba(255,255,255,0.28);
+        }
+
+        .c-year {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1.3rem, 2.5vw, 2.4rem);
+            font-weight: 300; color: rgba(212,165,116,0.1);
+            letter-spacing: 4px; margin-top: 1.6vh;
+        }
+
+        /* ── MODAL ── */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.45s ease; z-index: 1000;
+            background: rgba(0,0,0,0.5);
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .close-btn {
+            position: fixed; top: 14px; right: 20px;
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255,255,255,0.6); cursor: pointer; z-index: 2000;
+            border: 1px solid rgba(255,255,255,0.18); border-radius: 50%;
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(10px);
+            transition: all 0.35s cubic-bezier(0.23,1,0.32,1);
+        }
+        .close-btn:hover { transform: rotate(90deg); color: #d4a574; border-color: #d4a574; }
+        .close-btn svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+        .card {
+            width: 84vw; max-width: 1000px;
+            height: 78vh; max-height: 620px;
+            background: linear-gradient(135deg, #1a1612 0%, #0d0b09 55%, #1a1612 100%);
+            border-radius: 3px; display: flex; overflow: hidden;
+            transform: scale(0.9) translateY(18px);
+            transition: transform 0.5s cubic-bezier(0.23,1,0.32,1);
+            box-shadow: 0 40px 90px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .modal-overlay.active .card { transform: scale(1) translateY(0); }
+
+        .img-side {
+            width: 54%; height: 100%; position: relative;
+            display: flex; justify-content: center; align-items: center;
+            background: #090807; padding: 30px;
+        }
+
+        .img-glow {
+            position: absolute; top: 18%; left: 50%; transform: translateX(-50%);
+            width: 68%; height: 58%;
+            background: radial-gradient(ellipse at center, rgba(255,200,150,0.09) 0%, transparent 62%);
+            pointer-events: none;
+        }
+
+        .img-frame {
+            background: linear-gradient(145deg, #3a2f25 0%, #1a1612 55%, #3a2f25 100%);
+            padding: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+            position: relative; z-index: 1;
+        }
+
+        .img-mat { background: #f3ede4; padding: 12px; }
+        .focused-image { max-width: 100%; max-height: 48vh; object-fit: contain; display: block; }
+
+        .floor-ref {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 26%;
+            background: linear-gradient(180deg, transparent, rgba(0,0,0,0.28));
+            pointer-events: none;
+        }
+
+        .info-side {
+            width: 46%; padding: 5% 6%;
+            display: flex; flex-direction: column; justify-content: flex-start;
+            background: linear-gradient(90deg, #0c0a08 0%, #1a1612 100%);
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .info-side::before {
+            content: '';
+            position: absolute; left: 0; top: 10%; bottom: 10%;
+            width: 1px;
+            padding-right: 12px;
+            background: linear-gradient(180deg, transparent, rgba(212,165,116,0.28), transparent);
+        }
+        .info-side ::-webkit-scrollbar {
+            width: 4px;
+                }
+
+        .info-side ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .info-side ::-webkit-scrollbar-thumb {
+            background: #d4a574; 
+            border-radius: 2px;
+}
+
+        .info-side h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1.4rem, 3vw, 2.3rem);
+            font-weight: 300; letter-spacing: 4px;
+            color: #fff; text-transform: uppercase; margin-bottom: 14px;
+        }
+
+        .info-rule { width: 48px; height: 1px; background: linear-gradient(90deg, #d4a574, transparent); margin-bottom: 18px; }
+
+        .info-side p { font-size: clamp(0.85rem, 1.2vw, 0.95rem); line-height: 1.9; color: rgba(255,255,255,0.55); font-weight: 300; }
+
+        @media (max-width: 900px) {
+            html, body { overflow: auto; }
+            .body { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
+            .art-panel { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); }
+            .art-panel.left, .art-panel.right { border: none; padding: 1.5vh 2vw; }
+            .center-stage { width: 100%; min-height: 28vh; border-top: 1px solid rgba(212,165,116,0.12); border-bottom: 1px solid rgba(212,165,116,0.12); }
+            .card { flex-direction: column; width: 95vw; height: 88vh; max-height: none; }
+            .img-side { width: 100%; height: 46%; padding: 16px; }
+            .focused-image { max-height: 28vh; }
+            .info-side { width: 100%; height: 54%; padding: 5% 6%; }
+            .info-side::before { display: none; }
+        }
+
+        @media (hover: none) {
+            .frame-outer:hover { transform: none; }
+            .frame-outer:active { transform: scale(0.97); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+
+    <header>
+        <div class="h-label">Reminiscing the Philippines</div>
+        <div class="h-rule"></div>
+        <div class="h-label" style="font-style:italic;letter-spacing:3px;color:rgba(255,255,255,0.25);font-size:clamp(0.58rem,0.95vw,0.82rem);"></div>
+    </header>
+
+    <div class="body">
+        <div class="art-panel left">
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('i1.jpg','Rizal′s Roots in Lingayen','This display includes historical records and a genealogy chart that shows Dr. Jose Rizal′s ancestry back to Lingayen, Pangasinan. A family tree illustrating the relationship between the national hero and the well-known Quintos family of the province is displayed with old handwritten manuscripts and official documents. The exhibit emphasizes that Teodora Alonso, the mother of Rizal, was of descent from people who lived and worked in Lingayen. Jose Rizal′s close cultural and historical ties to Pangasinan are demonstrated by these artifacts. They show that the national hero had diverse genealogy, including Chinese, Spanish, and indigenous roots, with a strong lineage originating from Lingayen. They also show how notable Filipino families were intertwined throughout the Spanish colonial era.'
+,'hsl(15,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="i1.jpg" class="art-image" alt="" style="background:hsl(15,40%,30%) "></div></div>
+                </div>
+                <div class="plaque"><h3>Rizal's Roots in Lingayen</h3><p>Artist Unknown</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image02.jpg','Pangasinan Language, Literature, and Arts','The Pangasinan Language, Literature, and Arts are old-looking manuscripts, some of which consist of crumpled brown paper sheets that depict the past. The majority of the published works are written in Pangasinan and classified as religious, literary, and tale books, including handwritten and printed books from an earlier period. It is stated that learning the Pangasinan language, which originated in Ilocano and Bolinao, is challenging. These young farmer boys sing and narrate stories in Pangasinan folklore, reflecting their purity (Nelmida dissertation, 1982). Literary forms include tongtong (tales) and tambayo (lullabies). Lastly, Pablo Mejia\'s sarswela and Catalino Palisoc were performed in Pangasinan following World War II, such as at the Kakanti Ensemble and Pangasinan Cenaculo.','hsl(35,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image02.jpg" class="art-image" alt="" style="background:hsl(35,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Pangasinan Language, Literature, and Arts</h3><p>Author Unknown</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image03.jpg','Beachhead of Valor','This display features authentic wartime artifacts such as a military helmet, metal canteens, insignias, and old coins. These items were used by soldiers during World War II and have been preserved as part of the Banaan museum\'s historical collection. The exhibit reflects the presence and experiences of military forces in Pangasinan, particularly in areas like Lingayen Gulf, which played a significant role during the war. These artifacts represent the impact of World War II in Pangasinan, especially the events surrounding the Lingayen Gulf landings. They symbolize the struggles, sacrifices, and resilience of both soldiers and civilians during the wartime period, serving as a reminder of a crucial chapter in Philippine history.','hsl(55,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image03.jpg" class="art-image" alt="" style="background:hsl(55,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Beachhead of Valor</h3><p>Author Unknown</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image04.jpg','Taxidermy of Civet Cat','Taxidermy is a specialized practice used for educational displays, museum collections, and memorials for legally owned pets. It is a way of preparing, stuffing, and/or mounting an animal for display or study — involving skinning the animal, tanning the hide to preserve it, constructing a custom manikin (form), mounting the skin, and adding details like glass eyes. Taxidermy serves as a way to honor or repurpose animals, and is gaining attention as a form of "second life" art for deceased wildlife, turning them into educational or decorative pieces.','hsl(75,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image04.jpg" class="art-image" alt="" style="background:hsl(75,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Taxidermy of Civet Cat</h3><p>Artist Unknown</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image05.jpg','The Spineless Collections of <br> Fr. Casto de Elera, O.P. – Reliving the Past','This display features preserved marine invertebrates such as corals and starfish collected and studied during the Spanish colonial period. These specimens are part of the early natural history collections of the University of Santo Tomas Museum of Arts and Sciences. The corals and starfish are shown in their skeletal forms, highlighting their structure and diversity. The exhibit reflects how these organisms were used for scientific study and education in the past. These specimens represent the marine life that existed in Philippine seas historically, and reflect the early development of natural science in the Philippines during the Spanish colonial period, when scholars like Fr. Casto de Elera collected and studied such organisms.','hsl(95,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image05.jpg" class="art-image" alt="" style="background:hsl(95,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>The Spineless Collections of Fr. Casto de Elera, O.P. – Reliving the Past</h3><p>Fr. Casto de Elera, O.P.</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image06.jpg','A Mandarin of Distinction in his Habit of Ceremony','This illustration is a valuable artifact taken from the pages of "The Costumes of China: Illustrated by Sixty Engravings" written by George Henry Mason — one of the first English books to depict Chinese society. The pictures were made from watercolours created in workshops in Canton. This specific art is the frontpiece of the book, showing a man in formal court attire communicating his precise rank, social status, and relationship to the imperial universe. The work is evocative of the "Canton Export" period, when western curiosity in the east was at its peak but physical access to China was severely limited. These illustrations were an important visual bridge, recalling the origins of world trade. It is a reminder of the Galleon Trade era, where Manila served as the connection between East and West, standing as evidence of the shared history, trade relations, and cultural exchange that bound China and the Philippines together for centuries.','hsl(115,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image06.jpg" class="art-image" alt="" style="background:hsl(115,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>A Mandarin of Distinction in his Habit of Ceremony</h3><p>George Henry Mason</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image07.jpg','Human Figure (Bulul and Ritual Figures)','These are wooden sculptures depicting human figures in various dynamic poses and interactions. They showcase the distinct artistic style of the Ifugao people, characterized by simplified facial features, muscular forms, and natural wood textures. The carvings portray scenes of daily life, social activities, or ritualistic moments, capturing the culture, strength, and traditions of the community. They are handcrafted from hardwood, reflecting the skilled craftsmanship of the region. These carvings vividly evoke the rich cultural identity and spiritual beliefs of the Ifugao people, bringing to life their traditions, ancestral worship, and deep connection to nature. They remind us of the community\'s values, social dynamics, and way of life, while reflecting the timeless artistry, resilience, and heritage of indigenous Filipino craftsmanship.','hsl(135,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image07.jpg" class="art-image" alt="" style="background:hsl(135,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Human Figure (Bulul and Ritual Figures)</h3><p>Ifugao Craftsmen</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image08.jpg','American Cemetery & Memorial Construction','This display is part of the visitor center exhibit inside the Manila American Cemetery and Memorial. It contains World War II–era artifacts such as glass bottles and ammunition (bullets and shell casings), presented alongside archival photographs showing the construction of the cemetery. The exhibit panels explain that the cemetery was built after World War II, with initial construction managed by the U.S. Army Corps of Engineers and later maintained by the American Battle Monuments Commission. The Manila American Cemetery is the largest American military cemetery outside the United States, containing over 16,800 graves and commemorating more than 36,000 missing personnel.','hsl(155,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image08.jpg" class="art-image" alt="" style="background:hsl(155,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>American Cemetery & Memorial Construction</h3><p>Historical Exhibit</p></div>
+            </div>
+
+        </div>
+    <div class="center-stage">
+            <div class="orn"><div class="orn-line"></div><div class="orn-gem"></div><div class="orn-line r"></div></div>
+            <div class="c-title">Reminiscing<br>the<br>Philippines</div>
+ 
+            
+            <div class="c-rule"></div>
+
+            <div class="c-body">A collection of works<br>that capture what we value</div>
+            <p style="padding: 8px; font-size:8px; opacity:0.2; font-family: cormorant garmond; letter-spacing:2px;">Tap to interact</p>
+  
+            <div class="orn bottom"><div class="orn-line"></div><div class="orn-gem"></div><div class="orn-line r"></div></div>
+        </div>
+
+        <!-- RIGHT 4×2 -->
+        <div class="art-panel right">
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image09.jpg','Remnant: The Bolinao Skull','The Bolinao Skull by Jerry Buccat is an artwork that focuses on the archaeological significance of the Bolinao Skull. It is known for its gold dental ornamentation that signifies high status and beauty. This artwork explores themes of ancestral heritage and identity, becoming a tribute to Philippine pre-colonial history. The Remnant: The Bolinao Skull acts as a portal to the 14th–15th centuries, where the emphasis is on local craftsmanship and indigenous hierarchy, highlighting the ingenuity of pre-colonial Filipinos. This artwork is a testament to an ancestral identity that remains firm despite the passage of centuries.','hsl(175,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image09.jpg" class="art-image" alt="" style="background:hsl(175,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Remnant: The Bolinao Skull</h3><p>Jerry Buccat</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image10.jpg','Vintage Tickets of the Ferrocaril de Manila-Dagupan','These are original paper tickets used on the Ferrocaril de Manila-Dagupan, the very first railway system in the Philippines. Printed with place names such as Mangaldan, Dagupan, San Carlos, and Tarlac, along with serial numbers and route details, they served as official travel documents. These tickets are physical artifacts from the November 24, 1892, opening of the railway line. They stand for advancement, better connectivity, and the flow of people and products that connected Manila to the provinces of Northern and Central Luzon at an important time in Philippine history.','hsl(195,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image10.jpg" class="art-image" alt="" style="background:hsl(195,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Vintage Tickets of the Ferrocaril de Manila-Dagupan</h3><p>Historical Artifact</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image11.jpg','Giant Clam','The display is of a giant clam with thick and uneven ridges that form a wave-like pattern in the shell, showing its long exposure and life in the sea environment. This specific type of clam is usually found in Bolinao, featuring mantles that are a psychedelic display of electric blues, greens, and purples — each pattern unique, like a thumbprint of the ocean. Giant Clams are a tribute to the Philippine seas, specifically to the ancestors of the reef. They are beneficial to the ecosystem by using their massive shell as a physical foundation for corals and fish to build their homes.','hsl(215,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image11.jpg" class="art-image" alt="" style="background:hsl(215,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Giant Clam</h3><p>Natural Specimen</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image12.jpg','Memoria Sobre el Plan General de Ferrocarriles en la Isla de Luzón','This blueprint maps the core route of the Manila-Dagupan line and outlines the detailed structure plan for the railway stations and facilities along the way. It reflects the Neoclassical style common in public buildings during the Spanish era. Today, it is regarded as the foundational blueprint that eventually evolved into the Philippine National Railways (PNR). Commissioned by a Royal Decree of King Alfonso XII of Spain, the railway system was designed with the grand vision of the "Golden Age," aiming to boost economic growth, connect major trade hubs, stimulate economic development, and unify the island\'s transportation system.','hsl(235,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image12.jpg" class="art-image" alt="" style="background:hsl(235,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Memoria Sobre el Plan General de Ferrocarriles en la Isla de Luzón</h3><p>Office of the Inspector of Public Works</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image13.jpg','Traditional Way of Curing','This three-dimensional installation depicts the ritualistic and spiritual nature of folk healing in the Philippines, commonly referred to as pagtatawas or panggagamot. Featured inside a glass display case, it presents a collection of organic and symbolic materials used by an albularyo (folk healer) or a baylan (shaman). It serves as a visual documentation of ethnomedicine — the belief that illness can have spiritual causes requiring offerings to appease unseen spirits (anitos or diwatas). Ritual items include tobacco leaves (tabako) as offerings, betel nuts and lime (bunga at apog) for spiritual communication, spirituous liquor as libation, coins as symbolic payment to spirits, white candles for guiding prayers, and a bilao (woven bamboo tray) grounding the spiritual elements in everyday Filipino life.','hsl(255,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image13.jpg" class="art-image" alt="" style="background:hsl(255,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Traditional Way of Curing</h3><p>Ethnographic Exhibit</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image14.jpg','Ancient Pottery','Two mannequins are draped in intricate, fringed garments — a long cream-colored shawl with floral embroidery and a shorter peach-colored dress, suggesting a fusion of traditional Spanish (Manila shawl) and East Asian aesthetics. A large wall mural behind features blue-and-white illustrations of Chinese porcelain vessels, while physical artifacts including dark stoneware jars and ceramic bowls are displayed on glass shelves. The piece highlights the remnants of the Galleon Trade: the Mantón de Manila whose silk and embroidery techniques originated in China yet became iconic symbols of Spanish and Philippine culture, alongside Ming and Qing dynasty aesthetic influences, and the fragility of handmade crafts in a modern industrialized world.','hsl(275,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image14.jpg" class="art-image" alt="" style="background:hsl(275,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Ancient Pottery</h3><p>Historical Artifact</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image15.jpg','Mga Anting-Anting Collection','This is a display of anting-anting or amulets, featuring shirts with prayers, medals, candles, and necklaces that people believed could protect them from harm or bring good luck. The items are now in the Banaan Museum in Laoag City. Anting-anting were used by Filipinos during the Spanish and American colonial periods. Soldiers and ordinary people wore them because they believed the objects had special powers to keep them safe.','hsl(295,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image15.jpg" class="art-image" alt="" style="background:hsl(295,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Mga Anting-Anting Collection</h3><p>Banaan Museum, Laoag City</p></div>
+            </div>
+
+            <div class="exhibit"><div class="spotlight"></div>
+                <div class="frame-outer" onclick="openModal('image16.jpg','Old Railroad and Telegraph Items from Casa Real','This collection shows rusty railroad spikes, nails, and a glass insulator used for telegraph wires. These were part of the trains and telegraphs built when the Philippines was under Spain and America, and are now kept in the Banaan Museum, which used to be Casa Real. These items show how trains and telegraphs started in Ilocos Norte. Casa Real was the old government building that managed projects like these to connect towns and cities.','hsl(315,40%,30%)')">
+                    <div class="frame-inner"><div class="frame-mat"><img src="image16.jpg" class="art-image" alt="" style="background:hsl(315,40%,30%)"></div></div>
+                </div>
+                <div class="plaque"><h3>Old Railroad and Telegraph Items from Casa Real</h3><p>Banaan Museum</p></div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+    <span class="close-btn" onclick="closeModal()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </span>
+    <div class="card">
+        <div class="img-side">
+            <div class="img-glow"></div>
+            <div class="img-frame"><div class="img-mat"><img id="modal-img" src="" alt="" class="focused-image"></div></div>
+            <div class="floor-ref"></div>
+        </div>
+        <div class="info-side">
+            <h2 id="modal-title"></h2>
+            <div class="info-rule"></div>
+            <p id="modal-desc"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('modal');
+    const modalImg = document.getElementById('modal-img');
+    const modalTitle = document.getElementById('modal-title');
+    const modalDesc = document.getElementById('modal-desc');
+
+    function openModal(src, title, desc, bg) {
+        modalImg.src = src;
+        modalImg.style.background = bg || '';
+        modalTitle.textContent = title;
+        modalDesc.textContent = desc;
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            if (!modal.classList.contains('active')) {
+                modalImg.src = '';
+                modalTitle.textContent = '';
+                modalDesc.textContent = '';
+            }
+        }, 450);
+    }
+
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>

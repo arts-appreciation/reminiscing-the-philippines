@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 80%;
+        }
+
+        .sentence {
+            opacity: 0;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            animation: fadeIn 2s forwards;
+        }
+
+        .btn-continue {
+            opacity: 0;
+            margin-top: 2rem;
+            padding: 12px 30px;
+            font-size: 1rem;
+            color: white;
+            background-color: none;
+            border:2px solid #ffff;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            animation: fadeIn 8s forwards;
+            animation-delay: 7s; 
+            text-decoration: none;
+            display: inline-block;
+            transition:
+            transform 1s cubic-bezier(0.23, 1, 0.32, 1), 
+                background-color 0.4s ease, 
+                box-shadow 0.4s ease;
+
+        }
+
+        .btn-continue:hover {
+            background-color: #fff;
+            transform: scale(1.05);
+            color: #000;
+    
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .s1 { animation-delay: 1s; }
+        .s2 { animation-delay: 4s; }
+        .s3 { animation-delay: 6s; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="sentence s1">The journey begins with a single step.</div>
+        <div class="sentence s2">Every moment is a new opportunity.</div>
+        <div class="sentence s3">Are you ready to explore?</div>
+        
+        <a href="main.html" class="btn-continue">Continue</a>
+    </div>
+
+</body>
+</html>
